@@ -77,29 +77,69 @@ class geloLoaction{
               endif;  
         endif;
     }
+   
+    public  function geolocation_geoLocationInfo($ip){ 
+   
     
+    	$apiKey = esc_attr( get_option('infodbApiKey') );
+    
+    	if(!empty($apiKey)){
+        
+        	    $url = "http://api.ipinfodb.com/v3/ip-city/?key=$apiKey&format=json&ip=$ip";
+        	    $info = json_decode(file_get_contents($url));
+        	    $position = array('longitude'=>$info->{'longitude'}, 'latitude'=>$info->{'latitude'});
+        
+        	    return $position;
+        	}
+        	else{
+            
+            
+            	    return null;
+            	}
+            
+            
+           	}
     
     //insert visitor information to database
     public function geolocation_getVisitorIp(){
         
    if(!empty(get_option('infodbApiKey'))):
-    ?>
-       <script type="text/javascript">
-		jQuery(document).ready(function(){
-			var geoLocationAjaxUrl = '<?=admin_url('admin-ajax.php')?>';
-            jQuery.post(geoLocationAjaxUrl,{action:'geolocation_api_key'}, function(apiKey){
-				if(apiKey.length>0){
-					   jQuery.get( "http://api.ipinfodb.com/v3/ip-city/?key="+apiKey+"&format=json",function(response){
-						   var data = {action:'geolocation_insert_visitor_info','lat':response.latitude,'long':response.longitude,'ip':response.ipAddress};
-						   				jQuery.post(geoLocationAjaxUrl,data,function(response){ return;});
-						   		});
-						  
-					}
-                });
-			});
-       
-       </script>
-   <?php
+           if(!is_ssl()): 
+            ?>
+               <script type="text/javascript">
+        		jQuery(document).ready(function(){
+        			var geoLocationAjaxUrl = '<?=admin_url('admin-ajax.php')?>';
+                    jQuery.post(geoLocationAjaxUrl,{action:'geolocation_api_key'}, function(apiKey){
+        				if(apiKey.length>0){
+        					   jQuery.get( "http://api.ipinfodb.com/v3/ip-city/?key="+apiKey+"&format=json",function(response){
+        						   var data = {action:'geolocation_insert_visitor_info','lat':response.latitude,'long':response.longitude,'ip':response.ipAddress};
+        						   				jQuery.post(geoLocationAjaxUrl,data,function(response){ return;});
+        						   		});
+        						  
+        					}
+                        });
+        			});
+               
+               </script>
+           <?php
+           else:
+           
+                   global $wpdb;
+                 	   $ip = $_SERVER['REMOTE_ADDR'];
+                       $time = current_time('timestamp');
+                       $location = $this->geolocation_geoLocationInfo($ip);
+                       $tableName = $wpdb->prefix."visitorInfo";
+                   	    if(!is_null($location)):
+                               $sql = "INSERT INTO $tableName (`time`, `ip`, `long`, `lat`, `visitCount`) VALUES(".$time.", '".$ip."', ".$location['longitude'].",".$location['latitude'].",1) ON DUPLICATE KEY UPDATE time=".$time.", visitCount = visitCount+1 ;";
+                       	        $wpdb->query($sql);
+                       	    
+                       	 else:
+                           
+                           	       $sql = "INSERT INTO $tableName (`time`, `ip`,`long`, `lat`, `visitCount`) VALUES(".$time.", '".$ip."',0,0,1) ON DUPLICATE KEY UPDATE time=".$time.", visitCount = visitCount+1 ;";
+                                   $wpdb->query($sql);
+                             endif;      
+           
+                 endif;
    else:
         self::geolocation_insert_no_api_key();
    endif;
@@ -109,12 +149,10 @@ class geloLoaction{
         
         global $wpdb;
         $time = current_time('timestamp');
-        $longitude = '';
-        $latitude = '';
         $ip = $_SERVER['REMOTE_ADDR'];
-        
-        $sql=  "INSERT INTO {$wpdb->prefix}visitorinfo (`time`, `ip`, `long`, `lat`, `visitCount`) VALUES({$time}, %s,%s,%s,1) ON DUPLICATE KEY UPDATE time={$time}, visitCount = visitCount+1 ;";
-        $wpdb->query( $wpdb->prepare($sql,array($ip, $longitude, $latitude)));
+        $tableName = $wpdb->prefix."visitorInfo";
+        $sql = "INSERT INTO $tableName (`time`, `ip`,`long`, `lat`, `visitCount`) VALUES(".$time.", '".$ip."',0,0,1) ON DUPLICATE KEY UPDATE time=".$time.", visitCount = visitCount+1 ;";
+        $wpdb->query($sql);
           
     }
     
@@ -624,13 +662,17 @@ public function gelocation_displaySiteVisitorMap(){
     var latlongs = [
    <?php 
            $i=1;     
-           foreach ($result as $row):       
-                    if($i<sizeof($result)):
-                        ?>
-                       	{lat:"<?=$row['lat']?>",lon:"<?=$row['long']?>"},
-                        <?php else:?>
-                         {lat:"<?=$row['lat']?>",lon:"<?=$row['long']?>"}
-                        <?php  
+          
+           foreach ($result as $row): 
+           
+           if(strlen($row['lat'])>0 || strlen($row['long'])>0 ):
+                        if($i<sizeof($result)):
+                                ?>
+                               	{lat:"<?=$row['lat']?>",lon:"<?=$row['long']?>"},
+                                <?php else:?>
+                                 {lat:"<?=$row['lat']?>",lon:"<?=$row['long']?>"} 
+                                <?php  
+                         endif;   
                     endif;
              $i++;
            endforeach;
