@@ -3,9 +3,10 @@
  Plugin Name: Geo Location
  Plugin URI: 
  Description: Geo Location plugin to map visitor of the site and block user
- Version: 2.0
+ Version: 2.5.0
  Author: Ujwol Bastakoti
  Author URI:https://ujwolbastakoti.wordpress.com/
+ text-domain: geo-location
  License: GPLv2
  */
 
@@ -24,23 +25,22 @@ class geloLoaction{
         if ( is_admin() ):
             /* Call the html code */
             add_action('admin_menu', array($this,'geolocation_geoLocationAdminMenu'));
-            //action to register ipinfodb key
             add_action('admin_init', array($this,'gelocation_registerApiKey'));
+            add_action( 'admin_enqueue_scripts', array($this,'geo_location_admin_eneque' ));
+            add_action( 'admin_footer',  array($this,'block_visitor_from_site_javascript'));
+            add_action( 'admin_footer',  array($this,'delete_visitor_from_table_javascript')); 
+            add_action( 'admin_footer',  array($this,'display_visitor_map_modal_javascript')); 
         endif;
-        
-        add_action( 'admin_enqueue_scripts', array($this,'geo_location_admin_eneque' ));
+       
         add_action( 'wp_enqueue_scripts', array($this, 'geo_location_front_end_eneque'));
-        
+       // add_filter('script_loader_tag', array($this,'geoLocation_addAsyncAttribute'), 20, 2);
         add_action('wp_head', array($this,'gelocation_blockedIp'));
-        /*Code to execute javascript on visitor block*/
-        add_action( 'admin_footer',  array($this,'block_visitor_from_site_javascript'));
-        add_action( 'admin_footer',  array($this,'delete_visitor_from_table_javascript')); 
-        //action to handle ajax request
+       
+        //actions to handle ajax request on admin section
         add_action( 'wp_ajax_block_visitor_from_site', array($this,'block_visitor_from_site'));
-        //action to handle ajax request
         add_action( 'wp_ajax_delete_visitor_from_table', array($this,'delete_visitor_from_table'));
         //action to display visitor on modal backend
-        add_action( 'admin_footer',  array($this,'display_visitor_map_modal_javascript')); 
+      
         //shortcodes
         add_shortcode('getip', array($this,'geolocation_getVisitorIp'));
         add_shortcode('displaymap',  array($this,'gelocation_displaySiteVisitorMap'));
@@ -48,17 +48,34 @@ class geloLoaction{
         
         
         //frontend ajax function
-        //ajax to return ipinfodb api key
-        add_action('wp_ajax_geolocation_api_key', array($this,'geolocation_api_key'));
-        add_action('wp_ajax_nopriv_geolocation_api_key', array($this ,'geolocation_api_key'));
         add_action('wp_ajax_geolocation_insert_visitor_info', array($this,'geolocation_insert_visitor_info'));
         add_action('wp_ajax_nopriv_geolocation_insert_visitor_info', array($this ,'geolocation_insert_visitor_info'));
         
     }
+    public function geoLocation_addAsyncAttribute($tag, $handle) {
+        if ( 'geoLocationBingMap' === $handle ):    
+            return str_replace( ' src', ' src  async defer', $tag );
+        endif;   
+        return $tag;
+    }
+
     public function geo_location_front_end_eneque(){
-        wp_enqueue_script( 'jquery');
-        //localize wordpress ajax url
-       //var_dump( wp_localize_script( 'geoLocationAjax', 'geolocation_ajax_url', admin_url( 'admin-ajax.php' ) ));
+        wp_enqueue_script('geoLocationBingMap',"https://www.bing.com/api/maps/mapcontrol?key=".get_option('mapApiKey')."&callback=loadMapScenario");
+        wp_enqueue_script('geoLocationJs',plugins_url('js/frontend_gelocation.js',__FILE__), array('jquery'));
+        if(!is_ssl()): 
+            wp_localize_script( 'geoLocationJs', 'geolocation_params', array(
+                                                                                'no_ssl' => 'true',
+                                                                                'ipinfodb_apiKey' =>get_option('infodbApiKey'),
+                                                                                 'ajax_url' => admin_url( 'admin-ajax.php' ),
+                                                                                 'bing_map_type' => get_option('mapType'),
+                                                                                 'bing_map_visitors' => $this->geolocation_getVisitorList(),
+                                                                             ));
+        else:
+            wp_localize_script( 'geoLocationJs', 'geolocation_params', array(
+                                                                                'bing_map_visitors' => $this->geolocation_getVisitorList(),
+                                                                                'bing_map_type' => get_option('mapType'),
+             ));                                                                    
+        endif;
     }
     public function geo_location_admin_eneque(){
         wp_enqueue_script('ctcOverlayScript',plugins_url('js/ctc_overlay.jquery.js',__FILE__), array('jquery'));
@@ -73,7 +90,7 @@ class geloLoaction{
         $result = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}visitorInfo WHERE ip = '{$ip}' AND block = 1;");
         if( $result >= 1):
             if (shortcode_exists( 'getip' ) ):
-                wp_die(  " Your IP address has been blocked by site administrator.");
+                wp_die(  __(" Your IP address has been blocked by site administrator.",'geo-location'));
               endif;  
         endif;
     }
@@ -81,18 +98,17 @@ class geloLoaction{
     public  function geolocation_geoLocationInfo($ip){ 
    
     
-    	$apiKey = esc_attr( get_option('infodbApiKey') );
+    	$apiKey = esc_url( get_option('infodbApiKey') );
     
     	if(!empty($apiKey)){
         
-        	    $url = "http://api.ipinfodb.com/v3/ip-city/?key=$apiKey&format=json&ip=$ip";
+        	    $url = "http://api.ipinfodb.com/v3/ip-city/?key={$apiKey}&format=json&ip={$ip}";
         	    $info = json_decode(file_get_contents($url));
         	    $position = array('longitude'=>$info->{'longitude'}, 'latitude'=>$info->{'latitude'});
         
         	    return $position;
         	}
         	else{
-            
             
             	    return null;
             	}
@@ -104,26 +120,7 @@ class geloLoaction{
     public function geolocation_getVisitorIp(){
         
    if(!empty(get_option('infodbApiKey'))):
-           if(!is_ssl()): 
-            ?>
-               <script type="text/javascript">
-        		jQuery(document).ready(function(){
-        			var geoLocationAjaxUrl = '<?=admin_url('admin-ajax.php')?>';
-                    jQuery.post(geoLocationAjaxUrl,{action:'geolocation_api_key'}, function(apiKey){
-        				if(apiKey.length>0){
-        					   jQuery.get( "http://api.ipinfodb.com/v3/ip-city/?key="+apiKey+"&format=json",function(response){
-        						   var data = {action:'geolocation_insert_visitor_info','lat':response.latitude,'long':response.longitude,'ip':response.ipAddress};
-        						   				jQuery.post(geoLocationAjaxUrl,data,function(response){ return;});
-        						   		});
-        						  
-        					}
-                        });
-        			});
-               
-               </script>
-           <?php
-           else:
-           
+           if(is_ssl()): 
                    global $wpdb;
                  	   $ip = $_SERVER['REMOTE_ADDR'];
                        $time = current_time('timestamp');
@@ -230,10 +227,6 @@ class geloLoaction{
 
             	jQuery(document).ready(function($){
 
-
-            		
-            		
-            
             		/*section that deals with category item delete*/
             		jQuery( "input.geolocation_ip_info").click(function() {
             			var blockId = jQuery(this).attr('id');
@@ -382,12 +375,14 @@ public function display_visitor_map_modal_javascript() { ?>
  	    register_setting( 'api_key_group', 'mapDimensionWidth');
  	    register_setting( 'api_key_group', 'mapType');
  	  
- 	}
+     }
+   /*  
    //function to return api key to make request
  	public function geolocation_api_key(){
  	    echo get_option('infodbApiKey');
  	    wp_die();
- 	}
+     }
+     */
  
  //function to add ipinfodb API KEY
  public function gelocation_getMapIpdbinfoApiKey(){
@@ -483,8 +478,8 @@ public function display_visitor_map_modal_javascript() { ?>
      $page_links = paginate_links( array(
          'base' => add_query_arg( 'pagenum', '%#%' ),
          'format' => '',
-         'prev_text' => __( '&laquo;', 'text-domain' ),
-         'next_text' => __( '&raquo;', 'text-domain' ),
+         'prev_text' => __( '&laquo;', 'geo-location' ),
+         'next_text' => __( '&raquo;', 'geo-location' ),
          'total' => $num_of_pages,
          'current' => $pagenum
      ) );
@@ -636,13 +631,19 @@ public function display_visitor_map_modal_javascript() { ?>
                <?php 
 }
 
+//function to get visitor list for map
+public function geolocation_getVisitorList(){
+    global $wpdb;
+    $tableName = $wpdb->prefix."visitorInfo";
+	$sql = "SELECT  `long`, `lat` FROM  `".$tableName."`;";
+    $result = $wpdb->get_results($sql,ARRAY_A );
+    
+    return json_encode($result);
+}
 
 //function to display map on page
 public function gelocation_displaySiteVisitorMap(){
-	global $wpdb;
-	$tableName = $wpdb->prefix."visitorInfo";
-	$sql = "SELECT  `long`, `lat` FROM  `".$tableName."`;";
-	$result = $wpdb->get_results($sql,ARRAY_A );	
+
 	$width = '720px';
 	$height = '500px';
 	
@@ -655,48 +656,9 @@ public function gelocation_displaySiteVisitorMap(){
 	endif;
 ?>
 
-	<script type='text/javascript' src='https://www.bing.com/api/maps/mapcontrol?key=<?=get_option('mapApiKey')?>&callback=loadMapScenario' async defer></script>
   
-	<div id="myMap" style="position:relative; width:<?=$width?>; height: <?=$height?>; align:center"></div>
-	 <script type="text/javascript">
-    var latlongs = [
-   <?php 
-           $i=1;     
-          
-           foreach ($result as $row): 
-           
-           if(strlen($row['lat'])>0 || strlen($row['long'])>0 ):
-                        if($i<sizeof($result)):
-                                ?>
-                               	{lat:"<?=$row['lat']?>",lon:"<?=$row['long']?>"},
-                                <?php else:?>
-                                 {lat:"<?=$row['lat']?>",lon:"<?=$row['long']?>"} 
-                                <?php  
-                         endif;   
-                    endif;
-             $i++;
-           endforeach;
-    ?>
-      ];
+	<div id="myMap" class="geolocation_visitorMap" style="position:relative; width:<?=$width?>; height: <?=$height?>; align:center"></div>
 
-		var map = null;
-        function getMap(){
-          	  map = new Microsoft.Maps.Map(document.getElementById('myMap'), {
-        	  																	center: new Microsoft.Maps.Location(34, -4),
-																			     zoom:2,
-																			     mapTypeId: Microsoft.Maps.MapTypeId.<?php if(!empty(get_option('mapType'))): echo get_option('mapType');else: echo 'road';endif;?>,
-																			     supportedMapTypes: [Microsoft.Maps.MapTypeId.road, Microsoft.Maps.MapTypeId.aerial, Microsoft.Maps.MapTypeId.canvasLight] });
-																			 																			     
-                   
-              
-          for(var i in latlongs){
-        	    var pin = new Microsoft.Maps.Pushpin(new Microsoft.Maps.Location(latlongs[i].lat, latlongs[i].lon),{ text:'.' });
-        	    map.entities.push(pin);
-          }  
-        }
-        document.getElementsByTagName("body")[0].setAttribute('onload', 'getMap()');
-     
-  </script>
 	
 <?php 	
 }
