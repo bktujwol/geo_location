@@ -23,29 +23,25 @@ class geloLoaction{
         
         //for admin panel activities
         if ( is_admin() ):
+
             /* Call the html code */
             add_action('admin_menu', array($this,'geolocation_geoLocationAdminMenu'));
             add_action('admin_init', array($this,'gelocation_registerApiKey'));
-            add_action( 'admin_enqueue_scripts', array($this,'geo_location_admin_eneque' ));
-            add_action( 'admin_footer',  array($this,'block_visitor_from_site_javascript'));
-            add_action( 'admin_footer',  array($this,'delete_visitor_from_table_javascript')); 
-            add_action( 'admin_footer',  array($this,'display_visitor_map_modal_javascript')); 
+            add_action( 'admin_enqueue_scripts', array($this,'geo_location_admin_eneque' )); 
+
         endif;
        
         add_action( 'wp_enqueue_scripts', array($this, 'geo_location_front_end_eneque'));
-       // add_filter('script_loader_tag', array($this,'geoLocation_addAsyncAttribute'), 20, 2);
+        add_filter('script_loader_tag', array($this,'geoLocation_addAsyncAttribute'), 20, 2);
         add_action('wp_head', array($this,'gelocation_blockedIp'));
        
         //actions to handle ajax request on admin section
         add_action( 'wp_ajax_block_visitor_from_site', array($this,'block_visitor_from_site'));
         add_action( 'wp_ajax_delete_visitor_from_table', array($this,'delete_visitor_from_table'));
-        //action to display visitor on modal backend
       
         //shortcodes
         add_shortcode('getip', array($this,'geolocation_getVisitorIp'));
         add_shortcode('displaymap',  array($this,'gelocation_displaySiteVisitorMap'));
-        
-        
         
         //frontend ajax function
         add_action('wp_ajax_geolocation_insert_visitor_info', array($this,'geolocation_insert_visitor_info'));
@@ -54,16 +50,18 @@ class geloLoaction{
     }
     public function geoLocation_addAsyncAttribute($tag, $handle) {
         if ( 'geoLocationBingMap' === $handle ):    
-            return str_replace( ' src', ' src  async defer', $tag );
+            return str_replace( ' src', '  async defer src ', $tag );
         endif;   
         return $tag;
     }
 
+     //Script and styles for backend 
     public function geo_location_front_end_eneque(){
-        wp_enqueue_script('geoLocationBingMap',"https://www.bing.com/api/maps/mapcontrol?key=".get_option('mapApiKey')."&callback=loadMapScenario");
-        wp_enqueue_script('geoLocationJs',plugins_url('js/frontend_gelocation.js',__FILE__), array('jquery'));
+        wp_enqueue_script('geoLocationBingMap',"https://www.bing.com/api/maps/mapcontrol?callback=loadMapScenario&key=".get_option('mapApiKey') );
+        wp_enqueue_script('geoLocationFrontendJs',plugins_url('js/frontend_geolocation.js',__FILE__), array('jquery','geoLocationBingMap'),'', true);
+
         if(!is_ssl()): 
-            wp_localize_script( 'geoLocationJs', 'geolocation_params', array(
+            wp_localize_script( 'geoLocationFrontendJs', 'geolocation_params', array(
                                                                                 'no_ssl' => 'true',
                                                                                 'ipinfodb_apiKey' =>get_option('infodbApiKey'),
                                                                                  'ajax_url' => admin_url( 'admin-ajax.php' ),
@@ -71,13 +69,22 @@ class geloLoaction{
                                                                                  'bing_map_visitors' => $this->geolocation_getVisitorList(),
                                                                              ));
         else:
-            wp_localize_script( 'geoLocationJs', 'geolocation_params', array(
+            wp_localize_script( 'geoLocationFrontendJs', 'geolocation_params', array(
                                                                                 'bing_map_visitors' => $this->geolocation_getVisitorList(),
                                                                                 'bing_map_type' => get_option('mapType'),
              ));                                                                    
         endif;
     }
+
+    //Script and styles for backend 
     public function geo_location_admin_eneque(){
+        wp_enqueue_script('geoLocationBackendBingMap',"https://www.bing.com/api/maps/mapcontrol?callback=loadMapScenario&key=".get_option('mapApiKey') );
+        wp_enqueue_script('geoLocationBackendJs',plugins_url('js/backend_geolocation.js',__FILE__), array('jquery','geoLocationBackendBingMap'),'',true);
+        wp_localize_script( 'geoLocationBackendJs', 'geolocation_backend_params', array(
+                                                                                  'bing_map_visitors' => $this->geolocation_getVisitorList(),
+                                                                                  'bing_map_type' => get_option('mapType'),
+        )); 
+
         wp_enqueue_script('ctcOverlayScript',plugins_url('js/ctc_overlay.jquery.js',__FILE__), array('jquery'));
         wp_enqueue_style( 'ctcOverlayStyle', plugins_url('css/ctc_overlay_style.css',__FILE__));
     }
@@ -87,8 +94,8 @@ class geloLoaction{
     public function gelocation_blockedIp(){
         global $wpdb;
         $ip = $_SERVER['REMOTE_ADDR'];
-        $result = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}visitorInfo WHERE ip = '{$ip}' AND block = 1;");
-        if( $result >= 1):
+        $result = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}visitorInfo WHERE ip = '{$ip}' AND block = '1';");
+        if( $result === '1'):
             if (shortcode_exists( 'getip' ) ):
                 wp_die(  __(" Your IP address has been blocked by site administrator.",'geo-location'));
               endif;  
@@ -129,12 +136,10 @@ class geloLoaction{
                    	    if(!is_null($location)):
                                $sql = "INSERT INTO $tableName (`time`, `ip`, `long`, `lat`, `visitCount`) VALUES(".$time.", '".$ip."', ".$location['longitude'].",".$location['latitude'].",1) ON DUPLICATE KEY UPDATE time=".$time.", visitCount = visitCount+1 ;";
                        	        $wpdb->query($sql);
-                       	    
                        	 else:
-                           
-                           	       $sql = "INSERT INTO $tableName (`time`, `ip`,`long`, `lat`, `visitCount`) VALUES(".$time.", '".$ip."',0,0,1) ON DUPLICATE KEY UPDATE time=".$time.", visitCount = visitCount+1 ;";
-                                   $wpdb->query($sql);
-                             endif;      
+                           	$sql = "INSERT INTO $tableName (`time`, `ip`,`long`, `lat`, `visitCount`) VALUES(".$time.", '".$ip."',0,0,1) ON DUPLICATE KEY UPDATE time=".$time.", visitCount = visitCount+1 ;";
+                            $wpdb->query($sql);
+                        endif;      
            
                  endif;
    else:
@@ -155,7 +160,6 @@ class geloLoaction{
     
     
     public function geolocation_insert_visitor_info(){
-      
     global $wpdb;
             $time = current_time('timestamp');
             $longitude = $_POST['long'];
@@ -170,12 +174,9 @@ class geloLoaction{
     }
     
     private function pluginADU(){
-
         register_activation_hook(__FILE__,array($this,'geolocation_geoLocationInstall')); 
         register_deactivation_hook(__FILE__, array($this,'geolocation_gelocationDeactivate'));
-        register_uninstall_hook(__FILE__,'geolocation_geoLocationRemove');
-     
-        
+        register_uninstall_hook(__FILE__,'geolocation_geoLocationRemove');  
     }
    
     public function geolocation_geoLocationInstall(){
@@ -217,69 +218,9 @@ class geloLoaction{
     }
     
    
-    
-    //function to add javascript part for delete also chandes color on hover
-   public function block_visitor_from_site_javascript(){
-       ?>
-    
-    
-    <script type="text/javascript" >
-
-            	jQuery(document).ready(function($){
-
-            		/*section that deals with category item delete*/
-            		jQuery( "input.geolocation_ip_info").click(function() {
-            			var blockId = jQuery(this).attr('id');
-            			var blockOption = jQuery(this).attr('value');
-            			//if blocked unblock , if not blocked block
-            		  	if(blockOption==1){
-            		  		var blockConfirm = confirm("Do you want to unblock this IP address!");
-            		  		var block = 0;
-            			  	}
-            		  	else{
-            			  	 var blockConfirm = confirm("Do you want to block this IP address!");
-            			  	 var block = 1;
-            			  	}
-
-            			if(blockConfirm == true){
-    
-            			    var data = {
-                            			'action': 'block_visitor_from_site',
-                            			'rowId': blockId,
-                            			'block' : block
-                            		};
-            
-            			      jQuery.post(ajaxurl, data, function(response) {
-            			    	 
-                    				  if(response != 0 ){
-                    						
-                        				    if(block == 1){
-        
-                        				    	alert("IP successfully blocked.");
-                        						 jQuery("input[id*='"+blockId+"']").removeAttr("value").attr("value","1");
-                        						}
-                        					else{
-                        						alert("IP sucessfully unblocked.");
-                        						  jQuery("input[id*='"+blockId+"']").removeAttr("value").attr("value","0");
-                        						}	
-                    				  }
-                    				  else{
-                    						alert("For some reason uable to carryout action.");
-                    					  }	
-             				 
-            				});
-            			  }
-            			});	
-			
-	});
-	</script> 
- <?php 
- }
-
-
 //handle funtion for ajax delete
 public function block_visitor_from_site(){
-    
+
     global $wpdb;
     $table = $wpdb->prefix."visitorInfo";
      echo $wpdb->update($table,array('block'=> $_POST['block']) ,array('id'=>$_POST['rowId']),array('%d'),array('%d')); 
@@ -287,45 +228,6 @@ public function block_visitor_from_site(){
     
 }
 
-
-
-/*Ajax to deal with delete functionality*/
-public function delete_visitor_from_table_javascript() { ?>
-	<script type="text/javascript" >
-
-	jQuery(document).ready(function() {
-
-		jQuery("a.geolocation_ip_delete").click(function() {
-    		var deleteConfirm = confirm ('This visitor will be deleted');
-            if(deleteConfirm == true){
-			var rowToDelete = jQuery(this).attr('id');
-        			var data = {
-                			'action': 'delete_visitor_from_table',
-                			'rowId': rowToDelete
-                		};
-        
-            				//script to send ajax request
-            			  jQuery.post(ajaxurl, data, function(serverResponse) {
-            					if(serverResponse != false){
-            						alert("Visitor sucessfully deleted.");
-                					
-                					jQuery("a[id*='"+rowToDelete+"']").closest("tr").remove();
-                					}
-            					else{
-        								alert("Visitor could not be deleted.");
-                					}
-            				});
-					
-
-                }
-			
-
-			});//end of click link function
-	});// end of document load function
-		</script>
-		
-	 <?php
-}// end of ajax javascript function
 
 
 //ajax function to delete user
@@ -338,23 +240,6 @@ public function delete_visitor_from_table(){
 }
 
 
-
-/*Ajax to deal with delete functionality*/
-public function display_visitor_map_modal_javascript() { ?>
-	<script type="text/javascript" >
-	jQuery(document).ready(function(){
-		jQuery("a.display_visitor_map_modal").click(function() {
-			 var latLong = jQuery(this).attr('data-lat-long');
-			jQuery.ctcOverlayEl({elemHeight: '550px',elemWidth:'600px',iframeUrl:'https://www.bing.com/maps/embed?h=550&w=600&cp='+latLong+'&lvl=10&typ=d&sty=r&src=SHELL&FORM=MBEDV8&pp='+latLong+'"&scrolling="no"'});
-			jQuery(document).find(".overlayElContainer").css('overflow','hidden');
-			});
-	});
-	</script>
-
-
-<?php 
-}
-
  	public function geolocation_geoLocationAdminMenu() {
  	    add_menu_page('IP Geo Location', 
  	                  'IP Geo Location', 
@@ -363,7 +248,7 @@ public function display_visitor_map_modal_javascript() { ?>
  	                  array($this,'gelocation_geoLocationHtmlPage'),
  	                  'dashicons-admin-site'
                     );
- 	    
+
  	}
  	
  	
@@ -376,15 +261,8 @@ public function display_visitor_map_modal_javascript() { ?>
  	    register_setting( 'api_key_group', 'mapType');
  	  
      }
-   /*  
-   //function to return api key to make request
- 	public function geolocation_api_key(){
- 	    echo get_option('infodbApiKey');
- 	    wp_die();
-     }
-     */
- 
- //function to add ipinfodb API KEY
+  
+ //function to add ipinfodb and bing API KEY
  public function gelocation_getMapIpdbinfoApiKey(){
   
     ?>
@@ -445,18 +323,33 @@ public function display_visitor_map_modal_javascript() { ?>
                   <tr valign="top"><td><?php submit_button(); ?></td><td></td></tr>
                  
          </table>
+    </form>
  </div>
  <?php 
  
 ?>
- </form>
+ 
+ <div style="float:left; display:inline-block;margin-left:25px;">
+                             <h3><span class="dashicons dashicons-megaphone"></span>Information.</h3>
+                                <ol>
+                             		<li style="font-size:110%;"><b>Insert Short Code to track visitor: [getip].</li>
+                             		<li style="font-size:110%;"><b>Insert Short Code to Display Map: [displaymap].</li>
+                             		<li style="font-size:110%;"><b>You can check visitor in map in admin area.</li>
+                             		<li style="font-size:110%;"><b>Let visitor list load before taking any action.</li>
+                             		<li>You can use it without IPinfodb API key,but no location info will be available.</li>
+                             		<li>Mark,check boxes to block IP address , in Visitor information list table.</li>
+                             		<li>On deactivate plugin, blocked IP will be unblocked.</li>
+                             		
+                             	</ol>
+                             	
+                             </div>
  
  <?php 
  
  }
  
  
- //fucntion to get total visitors count
+ //function to get total visitors count
  public function geolocation_get_visitors_count(){
      global $wpdb;
      return $wpdb->get_var( "SELECT COUNT(`id`) FROM  `{$wpdb->prefix}visitorInfo`;" );
@@ -468,8 +361,7 @@ public function display_visitor_map_modal_javascript() { ?>
      $tableName = $wpdb->prefix."visitorInfo";
      /*Pagintions of the visitor info*/
      $pagenum = isset( $_GET['pagenum'] ) ? absint( $_GET['pagenum'] ) : 1;
-    // Find total numbers of records
-     $limit = 17; // number of rows in page
+     $limit = 17; 
      $offset = ( $pagenum - 1 ) * $limit;
      $total = self::geolocation_get_visitors_count();
      $num_of_pages = ceil( $total / $limit );
@@ -490,22 +382,21 @@ public function display_visitor_map_modal_javascript() { ?>
      $result = $wpdb->get_results($sql,ARRAY_A );
      if(!empty($result)):
          ?>
-    
+    <div class="wp-list-table widefat fixed striped">
          <div id='visitorInfo_table' style="margin-right: 20px;">
          <h2><span class="dashicons dashicons-groups"></span>The Visitor Information List </h2>
          
          <?php if ( $page_links ):?>
-             
-            <div class="tablenav ctcTablenav" style="margin-right:5px;" >
-                                <div class="tablenav-pages ctcTablenav-pages" > <?=$page_links?> </div>
-             </div>
+            <div class="tablenav" style="margin-right:5px;" >
+                <div class="tablenav-pages" > <?=$page_links?> </div>
+            </div>
             
           </div> 
          <?php endif;?>
            
   
          
-         <table  class="wp-list-table widefat fixed striped media" style="text-align:center;margin-top:70px" >
+         <table  class="wp-list-table widefat fixed striped media" style="text-align:center;margin-top:20px" >
              <thead>
              <tr >
              <td scope="col" class="manage-column column-title column-primary sortable desc ctcProductColumn" style="text-align:center;font-weight:bold;width:20%;">
@@ -597,38 +488,22 @@ public function display_visitor_map_modal_javascript() { ?>
     <a href="?page=geoLocation&tab=geolocation_api_form" class="nav-tab <?php echo $active_tab == 'geolocation_api_form' ? 'nav-tab-active' : ''; ?> ">API Information</a>
     <a href="?page=geoLocation&tab=geolocation_visitor_list" class="nav-tab <?php echo $active_tab == 'geolocation_visitor_list' ? 'nav-tab-active' : ''; ?>">The Visitor Info List 
     <span title="total unique visitors" style="box-shadow: 2px 2px 3px rgba(0,0,0,0.8);padding:3px;text-alin:center;color:white;border-radius:5%;background-color: rgba(147, 83, 196, 0.8);"><?=self::geolocation_get_visitors_count()?></span></a>
-    </h2>
+     <?php if(!empty(get_option('mapApiKey')) ): ?>
+      <a href="?page=geoLocation&tab=geolocation_visitors_map" class="nav-tab <?php echo $active_tab == 'geolocation_visitors_map' ? 'nav-tab-active' : ''; ?>"> Map Preview  </a>
+    <?php endif;?>
+      </h2>
     <div class="wrap"  >
 <?php  
-         if( $active_tab == 'geolocation_api_form' ):?>
-
-                             <?php self::gelocation_getMapIpdbinfoApiKey();?>
-                           
-                             <div style="float:left; display:inline-block;margin-left:25px;">
-                             <h3><span class="dashicons dashicons-megaphone"></span>Information.</h3>
-                                <ol>
-                             		<li style="font-size:110%;"><b>Insert Short Code to track visitor: [getip].</li>
-                             		<li style="font-size:110%;"><b>Insert Short Code to Display Map: [displaymap].</li>
-                             		<li style="font-size:110%;"><b>You can check visitor in map in admin area.</li>
-                             		<li style="font-size:110%;"><b>Let visitor list load before taking any action.</li>
-                             		<li>You can use it without IPinfodb API key,but no location info will be available.</li>
-                             		<li>Mark,check boxes to block IP address , in Visitor information list table.</li>
-                             		<li>On deactivate plugin, blocked IP will be unblocked.</li>
-                             		
-                             	</ol>
-                             	
-                             </div>
-                             
-         
-                  
-         <?php else: ?>
-                        <div class="wp-list-table widefat fixed striped">
-                         <?php  self::gelocation_visitorsInfoTable();?>
-                         </div>      
-               
-               <?php endif;?>
-               </div>
-               <?php 
+         if( $active_tab == 'geolocation_api_form' ):
+            self::gelocation_getMapIpdbinfoApiKey();
+        elseif( $active_tab == 'geolocation_visitors_map' ):
+            self::gelocation_displaySiteVisitorMapBackend();    
+        else: 
+            self::gelocation_visitorsInfoTable();
+        endif;
+     ?>                  
+    </div>
+<?php 
 }
 
 //function to get visitor list for map
@@ -663,7 +538,25 @@ public function gelocation_displaySiteVisitorMap(){
 <?php 	
 }
 
+//function to display map on backend
+public function gelocation_displaySiteVisitorMapBackend(){
 
+	$width = '720px';
+	$height = '500px';
+	
+	if(!empty(get_option( 'mapDimensionHeight'))):
+	       $height = get_option( 'mapDimensionHeight').'px';
+	endif;
+	
+	if(!empty(get_option( 'mapDimensionWidth'))):
+	       $width =get_option( 'mapDimensionWidth').'px';
+	endif;
+?>  
+
+	<div id="myMap" class="geolocation_visitorMap" style="position:relative; width:<?=$width?>; height: <?=$height?>; align:center"></div>
+
+<?php 	
+}
 
 
 
