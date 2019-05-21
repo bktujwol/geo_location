@@ -35,9 +35,9 @@ Note:
 1. Upload the folder `geolocation_master` and its contents to the `/wp-content/plugins/` directory or use the wordpress plugin installer
 2. Activate the plugin through the 'Plugins' menu in WordPress
 3. A new "Geo Locationt" will be available under Settings, 
-4) You must to get both API keys put them into respective field for application to work
-5) Then you have to put [getip] shortcode to the page whose visitor you want to track
-6) To display visitors in map you have to put [displaymap] shortcode to the page where you want display the map
+4. You must to get both API keys put them into respective field for application to work
+5. Then you have to put [getip] shortcode to the page whose visitor you want to track
+6. To display visitors in map you have to put [displaymap] shortcode to the page where you want display the map
   
 
 
@@ -61,10 +61,10 @@ You need to use the short code in the post and pages
 
 1.  Screenshot of the backend visitors display page tab 
 2.  Screen shot of backend with API key form 
-3.  Screenshot of single visitor in bing map on thickbox in admin area.
+3.  Screen shot of backend map preview. 
 4.  Screenshot of all unique visitors mapped in bing map  
 5.  Screenshot of page blocked visitors will see. 
-
+6.  Screenshot of single visitor in bing map on overlay in admin area.
 
 == Changelog ==
 
@@ -85,5 +85,11 @@ You need to use the short code in the post and pages
 * Better Admin UI 
 * Displays visitors count
 *Uses CTC overlay instead of thickbox now 
+
+= 2.5.0 =
+* Map preview added to admin area
+* Better backend UI
+* Uses bing maps V8
+
 
 

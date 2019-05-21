@@ -9,11 +9,11 @@ $(document).ready(function(){
             var blockOption = $(this).attr('value');
             //if blocked unblock , if not blocked block
               if(blockOption == '1'){
-                  var blockConfirm = confirm("Do you want to unblock this IP address!");
+                  var blockConfirm = confirm(geolocation_backend_params.unblock_confirm);
                   var block = '0';
                   }
               else{
-                   var blockConfirm = confirm("Do you want to block this IP address!");
+                   var blockConfirm = confirm(geolocation_backend_params.block_confirm);
                    var block = '1';
                   }
 
@@ -28,15 +28,15 @@ $(document).ready(function(){
       
                           if(response === '1' ){ 
                                 if(block === '1'){
-                                    alert("IP successfully blocked.");
+                                    alert(geolocation_backend_params.ip_blocked);
                                      $("input[id*='"+blockId+"']").attr("value","1");
                                     } else{
-                                      alert("IP sucessfully unblocked.");
+                                      alert(geolocation_backend_params.ip_unblocked);
                                       $("input[id*='"+blockId+"']").attr("value","0");
                                     }	
                           }
                           else{
-                                alert("For some reason uable to carryout action.");
+                                alert(geolocation_backend_params.action_error);
                               }	
                   
                 });
@@ -45,7 +45,7 @@ $(document).ready(function(){
             
     //delete ip record        
     $("a.geolocation_ip_delete").click(function() {
-                var deleteConfirm = confirm ('This visitor will be deleted');
+                var deleteConfirm = confirm (geolocation_backend_params.visitor_delete_confirm);
                 if(deleteConfirm == true){
                 var rowToDelete = $(this).attr('id');
                         var data = {
@@ -56,12 +56,12 @@ $(document).ready(function(){
                                 //script to send ajax request
                               $.post(ajaxurl, data, function(serverResponse) {
                                     if(serverResponse != false){
-                                        alert("Visitor sucessfully deleted.");
+                                        alert(geolocation_backend_params.visitor_deleted);
                                         
                                         $("a[id*='"+rowToDelete+"']").closest("tr").remove();
                                         }
                                     else{
-                                            alert("Visitor could not be deleted.");
+                                            alert(geolocation_backend_params.visitor_not_deleted);
                                         }
                                 });
                         

@@ -82,15 +82,25 @@ class geloLoaction{
 
     //Script and styles for backend 
     public function geo_location_admin_eneque(){
-        if( !empty( get_option('mapApiKey' ) ) && $_GET['tab']==='geolocation_visitors_map' ) :
+       
                 wp_enqueue_script('geoLocationBackendBingMap',"https://www.bing.com/api/maps/mapcontrol?callback=GetMap" );
                 wp_enqueue_script('geoLocationBackendJs',plugins_url('js/backend_geolocation.js',__FILE__), array('jquery','geoLocationBackendBingMap'),'',true);
                 wp_localize_script( 'geoLocationBackendJs', 'geolocation_backend_params', array(
                                                                                         'bing_map_key' => get_option('mapApiKey'), 
                                                                                         'bing_map_visitors' => $this->geolocation_getVisitorList(),
                                                                                         'bing_map_type' => get_option('mapType'),
+                                                                                        'block_confirm' => __("Do you want to block this IP address?",'geo-location'),
+                                                                                        'unblock_confirm' => __("Do you want to unblock this IP address?",'geo-location'),
+                                                                                        'ip_blocked'=> __("IP successfully blocked.",'geo-location'),
+                                                                                        'ip_unblocked'=> __("IP sucessfully unblocked",'geo-location'),
+                                                                                        'action_error' => __('For some reason uable to carryout action.','geo-location'),
+                                                                                        'visitor_deleted' => __('Visitor sucessfully deleted.','geo-location'),
+                                                                                        'visitor_not_deleted' => __("Visitor could not be deleted.",'geo-location'),
+                                                                                        'visitor_delete_confirm' => __("This visitor will be deleted.",'geo-location'),
+
+                                                                                        
                 )); 
-            endif;
+            
 
             wp_enqueue_script('ctcOverlayScript',plugins_url('js/ctc_overlay.jquery.js',__FILE__), array('jquery'));
             wp_enqueue_style( 'ctcOverlayStyle', plugins_url('css/ctc_overlay_style.css',__FILE__)); 
