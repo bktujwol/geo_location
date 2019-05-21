@@ -77,9 +77,12 @@ $(document).ready(function(){
             var latLong = $(this).attr('data-lat-long');
             $.ctcOverlayEl({elemHeight: '550px',elemWidth:'600px',iframeUrl:'https://www.bing.com/maps/embed?h=550&w=600&cp='+latLong+'&lvl=10&typ=d&sty=r&src=SHELL&FORM=MBEDV8&pp='+latLong+'"&scrolling="no"'});
             $(document).find(".overlayElContainer").css('overflow','hidden');
-            });             
+            });  
+            
 
+                   
 
+/*
 //section to load map
 if( $('#myMap').length >= 1){
     var latlongs = JSON.parse(geolocation_backend_params.bing_map_visitors);
@@ -92,11 +95,11 @@ if( $('#myMap').length >= 1){
             }
 
                 var map = new Microsoft.Maps.Map('#myMap', {
-                                                                                  center: new Microsoft.Maps.Location(34, -4),
-                                                                                 zoom:2,
-                                                                                 mapTypeId: Microsoft.Maps.MapTypeId.geoLocationMapType,
-                                                                                 supportedMapTypes: [Microsoft.Maps.MapTypeId.road, Microsoft.Maps.MapTypeId.aerial, Microsoft.Maps.MapTypeId.canvasLight] 
-                                                                            });
+                                                            credentials:geolocation_backend_params.bing_map_key,
+                                                            zoom:2,
+                                                            mapTypeId: Microsoft.Maps.MapTypeId.geoLocationMapType,
+                                                            supportedMapTypes: [Microsoft.Maps.MapTypeId.road, Microsoft.Maps.MapTypeId.aerial, Microsoft.Maps.MapTypeId.canvasLight] 
+                                                            });
                                                                                                                                                                
      
 
@@ -106,10 +109,82 @@ if( $('#myMap').length >= 1){
             }
             map.entities.push(pin);
         }
-  }  
+  } 
+  */ 
 
 });
 
 
 
 }(jQuery))
+
+function GetMap() {
+   // console.log(geolocation_backend_params.bing_map_visitors);
+   var geoLocationMapType = geolocation_backend_params.bing_map_type;
+
+
+    var visitorsData = JSON.parse(geolocation_backend_params.bing_map_visitors);
+    var map = new Microsoft.Maps.Map('#myMap', {
+        credentials: geolocation_backend_params.bing_map_key,
+    });
+
+
+if(geolocation_backend_params.bing_map_type === 'aerial'){
+    map.setView({
+        mapTypeId: Microsoft.Maps.MapTypeId.aerial,
+        zoom: 2,
+    });
+}else if(geolocation_backend_params.bing_map_type === 'canvasLight'){
+    map.setView({
+        mapTypeId: Microsoft.Maps.MapTypeId.canvasLight,
+        zoom: 2,
+    });
+}else {
+    map.setView({
+        mapTypeId: Microsoft.Maps.MapTypeId.road,
+        zoom: 2,
+    });
+}
+   
+
+     //Create an infobox at the center of the map but don't show it.
+     infobox = new Microsoft.Maps.Infobox(map.getCenter(), {
+        visible: false
+    });
+
+    //Assign the infobox to a map instance.
+    infobox.setMap(map);
+
+    //Load the Clustering module.
+
+    Microsoft.Maps.loadModule("Microsoft.Maps.Clustering", function () {
+        for( var i in  visitorsData ){
+            if( null !== visitorsData[i].lat ||   null !== visitorsData[i].long){
+             var pin = new Microsoft.Maps.Pushpin(new Microsoft.Maps.Location(visitorsData[i].lat, visitorsData[i].long),{ text:visitorsData[i].visitCount });
+            }
+
+
+              //Store some metadata with the pushpin.
+              pin.metadata = {
+                title: 'Visitor Count :' + visitorsData[i].visitCount,
+            };
+
+           //Add a click event handler to the pushpin.
+           Microsoft.Maps.Events.addHandler(pin, 'click', function(e){
+
+            if (e.target.metadata) {
+                //Set the infobox options with the metadata of the pushpin.
+                infobox.setOptions({
+                    location: e.target.getLocation(),
+                    title: e.target.metadata.title,
+                    description: e.target.metadata.description,
+                    visible: true
+                });
+            }
+
+           });  
+         map.entities.push(pin);
+        }
+    });
+
+} 

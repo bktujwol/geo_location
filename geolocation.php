@@ -57,36 +57,43 @@ class geloLoaction{
 
      //Script and styles for backend 
     public function geo_location_front_end_eneque(){
-        wp_enqueue_script('geoLocationBingMap',"https://www.bing.com/api/maps/mapcontrol?callback=loadMapScenario&key=".get_option('mapApiKey') );
-        wp_enqueue_script('geoLocationFrontendJs',plugins_url('js/frontend_geolocation.js',__FILE__), array('jquery','geoLocationBingMap'),'', true);
+        if( !empty( get_option('mapApiKey' ) ) ) :
+                wp_enqueue_script('geoLocationBingMap',"https://www.bing.com/api/maps/mapcontrol?callback=GetMap" );
+                wp_enqueue_script('geoLocationFrontendJs',plugins_url('js/frontend_geolocation.js',__FILE__), array('jquery','geoLocationBingMap'),'', true);
 
-        if(!is_ssl()): 
-            wp_localize_script( 'geoLocationFrontendJs', 'geolocation_params', array(
-                                                                                'no_ssl' => 'true',
-                                                                                'ipinfodb_apiKey' =>get_option('infodbApiKey'),
-                                                                                 'ajax_url' => admin_url( 'admin-ajax.php' ),
-                                                                                 'bing_map_type' => get_option('mapType'),
-                                                                                 'bing_map_visitors' => $this->geolocation_getVisitorList(),
-                                                                             ));
-        else:
-            wp_localize_script( 'geoLocationFrontendJs', 'geolocation_params', array(
-                                                                                'bing_map_visitors' => $this->geolocation_getVisitorList(),
-                                                                                'bing_map_type' => get_option('mapType'),
-             ));                                                                    
-        endif;
+                if( !is_ssl() ): 
+                    wp_localize_script( 'geoLocationFrontendJs', 'geolocation_params', array(
+                                                                                        'no_ssl' => 'true',
+                                                                                        'ipinfodb_apiKey' =>get_option('infodbApiKey'),
+                                                                                        'ajax_url' => admin_url( 'admin-ajax.php' ),
+                                                                                        'bing_map_key' => get_option('mapApiKey'),
+                                                                                        'bing_map_type' => get_option('mapType'),
+                                                                                        'bing_map_visitors' => $this->geolocation_getVisitorList(),
+                                                                                    ));
+                else:
+                    wp_localize_script( 'geoLocationFrontendJs', 'geolocation_params', array(
+                                                                                        'bing_map_key' => get_option('mapApiKey'),
+                                                                                        'bing_map_visitors' => $this->geolocation_getVisitorList(),
+                                                                                        'bing_map_type' => get_option('mapType'),
+                    ));                                                                    
+                endif;
+            endif;
     }
 
     //Script and styles for backend 
     public function geo_location_admin_eneque(){
-        wp_enqueue_script('geoLocationBackendBingMap',"https://www.bing.com/api/maps/mapcontrol?callback=loadMapScenario&key=".get_option('mapApiKey') );
-        wp_enqueue_script('geoLocationBackendJs',plugins_url('js/backend_geolocation.js',__FILE__), array('jquery','geoLocationBackendBingMap'),'',true);
-        wp_localize_script( 'geoLocationBackendJs', 'geolocation_backend_params', array(
-                                                                                  'bing_map_visitors' => $this->geolocation_getVisitorList(),
-                                                                                  'bing_map_type' => get_option('mapType'),
-        )); 
+        if( !empty( get_option('mapApiKey' ) ) && $_GET['tab']==='geolocation_visitors_map' ) :
+                wp_enqueue_script('geoLocationBackendBingMap',"https://www.bing.com/api/maps/mapcontrol?callback=GetMap" );
+                wp_enqueue_script('geoLocationBackendJs',plugins_url('js/backend_geolocation.js',__FILE__), array('jquery','geoLocationBackendBingMap'),'',true);
+                wp_localize_script( 'geoLocationBackendJs', 'geolocation_backend_params', array(
+                                                                                        'bing_map_key' => get_option('mapApiKey'), 
+                                                                                        'bing_map_visitors' => $this->geolocation_getVisitorList(),
+                                                                                        'bing_map_type' => get_option('mapType'),
+                )); 
+            endif;
 
-        wp_enqueue_script('ctcOverlayScript',plugins_url('js/ctc_overlay.jquery.js',__FILE__), array('jquery'));
-        wp_enqueue_style( 'ctcOverlayStyle', plugins_url('css/ctc_overlay_style.css',__FILE__));
+            wp_enqueue_script('ctcOverlayScript',plugins_url('js/ctc_overlay.jquery.js',__FILE__), array('jquery'));
+            wp_enqueue_style( 'ctcOverlayStyle', plugins_url('css/ctc_overlay_style.css',__FILE__)); 
     }
     
    
@@ -266,15 +273,17 @@ public function delete_visitor_from_table(){
  public function gelocation_getMapIpdbinfoApiKey(){
   
     ?>
+    
  <div id="api_key_form" style="float:left;display:inline-block;margin-left:25px;width:50%;" >
+ <fieldset style="border:2px dotted rgba(0,0,0,0.8);">
+  <legend align="center"><h3 class="dashicons-before dashicons-admin-generic">Settings</h3></legend>
  <form method="post" action="options.php">
  <?php 
  settings_fields('api_key_group');
  do_settings_sections('api_key_group');
  ?>
- 
-  <h3><span class="dashicons dashicons-admin-generic"></span>Settings</h3>
-         <table class="form-table" style="width:100%;">
+
+         <table class="form-table" style="width:100%; veritcal-align:middle;margin-left:50px;">
                  <tr valign="top">
                  <td scope="row">InfoDB API Key : </td>
                  <td><input type="text" name="infodbApiKey" size="45" value="<?=get_option('infodbApiKey')?>" /></td>
@@ -325,24 +334,24 @@ public function delete_visitor_from_table(){
          </table>
     </form>
  </div>
- <?php 
+<fieldset>
+<fieldset style="border:2px dotted rgba(0,0,0,0.8);float:left; display:inline-block;margin-left:15px;padding:40px;">
+  <legend align="center"><h3 class="dashicons-before dashicons-megaphone">Information</h3></legend>
+ <div style="">
  
-?>
- 
- <div style="float:left; display:inline-block;margin-left:25px;">
-                             <h3><span class="dashicons dashicons-megaphone"></span>Information.</h3>
-                                <ol>
-                             		<li style="font-size:110%;"><b>Insert Short Code to track visitor: [getip].</li>
-                             		<li style="font-size:110%;"><b>Insert Short Code to Display Map: [displaymap].</li>
-                             		<li style="font-size:110%;"><b>You can check visitor in map in admin area.</li>
-                             		<li style="font-size:110%;"><b>Let visitor list load before taking any action.</li>
+                                <ol style="font-size:14px;">
+                             		<li><b>Insert Short Code to track visitor: <font style="font-size:18px;"> [getip] </font>.</li>
+                             		<li ><b>Insert Short Code to Display Map: <font style="font-size:18px;">[displaymap]</font>.</li>
+                             		<li ><b>You can check visitor in map in admin area.</li>
+                             		<li ><b>Let visitor list load before taking any action.</li>
                              		<li>You can use it without IPinfodb API key,but no location info will be available.</li>
                              		<li>Mark,check boxes to block IP address , in Visitor information list table.</li>
                              		<li>On deactivate plugin, blocked IP will be unblocked.</li>
                              		
                              	</ol>
-                             	
+                         
                              </div>
+                             </fieldset> 	        
  
  <?php 
  
@@ -370,8 +379,9 @@ public function delete_visitor_from_table(){
      $page_links = paginate_links( array(
          'base' => add_query_arg( 'pagenum', '%#%' ),
          'format' => '',
-         'prev_text' => __( '&laquo;', 'geo-location' ),
-         'next_text' => __( '&raquo;', 'geo-location' ),
+         'prev_next'          => true,
+	     'prev_text'          => __('« Previous'),
+         'next_text'          => __('Next »'),
          'total' => $num_of_pages,
          'current' => $pagenum
      ) );
@@ -391,7 +401,6 @@ public function delete_visitor_from_table(){
                 <div class="tablenav-pages" > <?=$page_links?> </div>
             </div>
             
-          </div> 
          <?php endif;?>
            
   
@@ -497,7 +506,12 @@ public function delete_visitor_from_table(){
          if( $active_tab == 'geolocation_api_form' ):
             self::gelocation_getMapIpdbinfoApiKey();
         elseif( $active_tab == 'geolocation_visitors_map' ):
-            self::gelocation_displaySiteVisitorMapBackend();    
+            $width = !empty( get_option( 'mapDimensionWidth') ) ? (get_option( 'mapDimensionWidth' )+20).'px' :'930px';
+            echo '<fieldset style="border:2px dotted rgba(0,0,0,0.8);">';
+            echo '<legend align="center" ><h3 class="dashicons-before dashicons-admin-site"  > Visitors On Map Preview </h3></legend>';
+            echo '<div style="padding:30px; margin-bottom:40px; margin-top:20px;margin-left:auto;margin-right:auto;display:block;border : 1px solid rgba(0,0,0,0.7);width:'.$width.';  ">';
+                self::gelocation_displaySiteVisitorMap();    
+             echo '</div></fieldset>';    
         else: 
             self::gelocation_visitorsInfoTable();
         endif;
@@ -510,7 +524,7 @@ public function delete_visitor_from_table(){
 public function geolocation_getVisitorList(){
     global $wpdb;
     $tableName = $wpdb->prefix."visitorInfo";
-	$sql = "SELECT  `long`, `lat` FROM  `".$tableName."`;";
+	$sql = "SELECT  `long`, `lat`,`visitCount` FROM  `".$tableName."`;";
     $result = $wpdb->get_results($sql,ARRAY_A );
     
     return json_encode($result);
@@ -519,46 +533,18 @@ public function geolocation_getVisitorList(){
 //function to display map on page
 public function gelocation_displaySiteVisitorMap(){
 
-	$width = '720px';
-	$height = '500px';
-	
-	if(!empty(get_option( 'mapDimensionHeight'))):
-	       $height = get_option( 'mapDimensionHeight').'px';
-	endif;
-	
-	if(!empty(get_option( 'mapDimensionWidth'))):
-	       $width =get_option( 'mapDimensionWidth').'px';
-	endif;
+ 
+    $height = !empty( get_option( 'mapDimensionHeight') )? get_option( 'mapDimensionHeight' ).'px' :'550px';
+     $width = !empty( get_option( 'mapDimensionWidth') ) ? get_option( 'mapDimensionWidth' ).'px' :'920px';
+     
+     $subTab = isset( $_GET['tab']) ? $_GET['tab'] :'';
+    
+     if( $subTab === 'geolocation_visitors_map' || !is_admin() ):  
 ?>
-
-  
-	<div id="myMap" class="geolocation_visitorMap" style="position:relative; width:<?=$width?>; height: <?=$height?>; align:center"></div>
-
-	
+	<div id="myMap" class="geolocation_visitorMap" style="position:relative; width:<?=$width?>; height: <?=$height?>; margin-left:auto;margin-right:auto;display:block;"></div>	
 <?php 	
+    endif;
 }
-
-//function to display map on backend
-public function gelocation_displaySiteVisitorMapBackend(){
-
-	$width = '720px';
-	$height = '500px';
-	
-	if(!empty(get_option( 'mapDimensionHeight'))):
-	       $height = get_option( 'mapDimensionHeight').'px';
-	endif;
-	
-	if(!empty(get_option( 'mapDimensionWidth'))):
-	       $width =get_option( 'mapDimensionWidth').'px';
-	endif;
-?>  
-
-	<div id="myMap" class="geolocation_visitorMap" style="position:relative; width:<?=$width?>; height: <?=$height?>; align:center"></div>
-
-<?php 	
-}
-
-
 
 }
 
