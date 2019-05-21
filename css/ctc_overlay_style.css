@@ -3,7 +3,7 @@
     background:rgba(255,255,255,1);  
 }
 
-/* Handle */
+
 /*
 .ctcOverlayImageContainer ::-webkit-scrollbar-thumb {
     background:rgba(255,255,255,1); 
@@ -37,7 +37,18 @@
 }
 
 /* The navigation links inside the overlay */
-.ctcOverlayElClosebtn,
+.ctcOverlayElClosebtn{
+  float: right;
+  font-weight: bold;
+  z-index: 25000!important;
+  font-size: 35px;
+  -webkit-transition: width 0.2s;
+  transition: width 0.2;
+  transition: 0.2s ease;
+  -webkit-transition: 0.2s ease;
+  -moz-transition: 0.2s ease;
+  top: 0;
+}
 .ctcOverlayClosebtn{
 float:right;
 font-weight:bold;
@@ -48,8 +59,23 @@ font-size:40px;
      transition: 0.2s ease;
      -webkit-transition: 0.2s ease;
      -moz-transition: 0.2s ease;
-     top:0px;
+     top:0;
+}
+
+.overlayContentloading{
+
+	  -webkit-transition: width 0.5s; /* Safari */
+    transition: width 0.5s;
+   transition: 0.2s ease;
+  -webkit-transition: 0.2s ease;
+  -moz-transition: 0.2s ease;
+	-webkit-animation:   animateWaitLoading  1s infinite linear;
+     animation:   animateWaitLoading  1s infinite linear;
      
+
+}
+.overlayContentloading::before{
+	color:rgb(255,99,71) !important;
 }
 
 .ctcOverlayElClosebtn{
@@ -299,15 +325,18 @@ text-align:center !important;
 padding-top:5% !important;
 }
 
-#ctcOverlayModal #ctcOverlayModaButton{
+#ctcOverlayModal 
+#ctcOverlayModaButton{
 	float:right;
-	height:45px !important;
 	margin-right:5% !important;
 	color:rgba(255,255,255,1) !important;
 	border:2px solid rgba(255,255,255,1);
+	background-color:rgba(0,0,0,1) !important;
+	color:rgba(255,255,255,1);
 	border-radius:10px!important;
 	text-align:center !important;
-	margin-top:15px !important;
+	text-align:center!important;
+	margin-top:20px;
 	
 }
 
@@ -370,68 +399,34 @@ padding-top:5% !important;
 
 /*animation for wait while content is being loaded*/
 @-webkit-keyframes   animateWaitLoading{
-     0% {
-       opacity:0.5;
+      from {
+
+      -webkit-transform: rotate(0deg);
+ 
      }
     
+    to {
+      -webkit-transform: rotate(359deg);
     
-  15% {
-  		 opacity:0.6;
-    }
-    
-    30%{
-    	
-         opacity:0.7;
-    }
-    45%{
-    	 opacity:0.8;
-        
-    }
-    60%{
-    	opacity:0.9;
-       
-    }
-     75%{
-    	  opacity:0.8;
-    }
-    90%{
-    	  opacity:0.7;
-    }
-     100%{
-    	  opacity:0.6;
-    }
+     }
 }
 
 @keyframes animateWaitLoading{
-    0% {
-       opacity:0.5;
+	
+ from {
+    -moz-transform: rotate(0deg);
+    -o-transform: rotate(0deg);
+    -ms-transform: rotate(0deg);
+    transform: rotate(0deg);
      }
     
+    to {
+    -moz-transform: rotate(359deg);
+    -o-transform: rotate(359deg);
+    -ms-transform: rotate(359deg);
+    transform: rotate(359deg);
     
-  15% {
-  		 opacity:0.6;
-    }
-    
-    30%{
-    	
-         opacity:0.7;
-    }
-    45%{
-    	 opacity:0.8;
-        
-    }
-    60%{
-    	opacity:0.9;
-       
-    }
-     75%{
-    	  opacity:0.8;
-    }
-    90%{
-    	  opacity:0.7;
-    }
-     100%{
-    	  opacity:0.6;
-    }
-     
+     }
+	
+
 }
