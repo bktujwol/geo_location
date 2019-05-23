@@ -10,7 +10,7 @@
  License: GPLv2
  */
 
-class geloLoaction{
+class geoLocation{
     
     public function __construct(){
 
@@ -120,10 +120,8 @@ class geloLoaction{
     }
    
     public  function geolocation_geoLocationInfo($ip){ 
-   
-    
-    	$apiKey = esc_url( get_option('infodbApiKey') );
-    
+
+    	$apiKey = esc_url( get_option('infodbApiKey') );    
     	if(!empty($apiKey)){
         
         	    $url = "http://api.ipinfodb.com/v3/ip-city/?key={$apiKey}&format=json&ip={$ip}";
@@ -191,9 +189,9 @@ class geloLoaction{
     }
     
     private function pluginADU(){
-        register_activation_hook(__FILE__,array($this,'geolocation_geoLocationInstall')); 
-        register_deactivation_hook(__FILE__, array($this,'geolocation_gelocationDeactivate'));
-        register_uninstall_hook(__FILE__,'geolocation_geoLocationRemove');  
+        register_activation_hook(__FILE__, array($this,'geolocation_geoLocationInstall') ); 
+        register_deactivation_hook(__FILE__, array($this,'geolocation_gelocationDeactivate') );
+        register_uninstall_hook(__FILE__, array('geoLocation','geolocation_geoLocationRemove') );  
     }
    
     public function geolocation_geoLocationInstall(){
@@ -558,4 +556,4 @@ public function gelocation_displaySiteVisitorMap(){
 
 }
 
-new geloLoaction();
+new geoLocation();
