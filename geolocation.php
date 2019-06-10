@@ -3,7 +3,7 @@
  Plugin Name: Geo Location
  Plugin URI: 
  Description: Geo Location plugin to map visitor of the site and block user
- Version: 2.5.0
+ Version: 2.5.1
  Author: Ujwol Bastakoti
  Author URI:https://ujwolbastakoti.wordpress.com/
  text-domain: geo-location

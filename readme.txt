@@ -3,7 +3,7 @@ Contributors: ujw0l
 Tags: visitor,tracking, bing map, mapping, IP tracking, IP Address blocking 
 Requires at least: 3.5	+
 Tested up to: 5.2.1
-Stable tag: 2.5.0
+Stable tag: 2.5.1
 License: GPLv2
 
 Plugin that that collect geological info of visitors and display them in Bing Map and gives admin ability to block them.	
