@@ -3,14 +3,14 @@
  Plugin Name: Geo Location
  Plugin URI: 
  Description: Geo Location plugin to map visitor of the site and block user
- Version: 2.5.0
+ Version: 2.5.1
  Author: Ujwol Bastakoti
  Author URI:https://ujwolbastakoti.wordpress.com/
  text-domain: geo-location
  License: GPLv2
  */
 
-class geloLoaction{
+class geoLocation{
     
     public function __construct(){
 
@@ -120,12 +120,10 @@ class geloLoaction{
     }
    
     public  function geolocation_geoLocationInfo($ip){ 
-   
-    
-    	$apiKey = esc_url( get_option('infodbApiKey') );
-    
+
+    	$apiKey =  get_option('infodbApiKey') ;    
     	if(!empty($apiKey)){
-        
+
         	    $url = "http://api.ipinfodb.com/v3/ip-city/?key={$apiKey}&format=json&ip={$ip}";
         	    $info = json_decode(file_get_contents($url));
         	    $position = array('longitude'=>$info->{'longitude'}, 'latitude'=>$info->{'latitude'});
@@ -191,9 +189,9 @@ class geloLoaction{
     }
     
     private function pluginADU(){
-        register_activation_hook(__FILE__,array($this,'geolocation_geoLocationInstall')); 
-        register_deactivation_hook(__FILE__, array($this,'geolocation_gelocationDeactivate'));
-        register_uninstall_hook(__FILE__,'geolocation_geoLocationRemove');  
+        register_activation_hook(__FILE__, array($this,'geolocation_geoLocationInstall') ); 
+        register_deactivation_hook(__FILE__, array($this,'geolocation_gelocationDeactivate') );
+        register_uninstall_hook(__FILE__, array('geoLocation','geolocation_geoLocationRemove') );  
     }
    
     public function geolocation_geoLocationInstall(){
@@ -558,4 +556,4 @@ public function gelocation_displaySiteVisitorMap(){
 
 }
 
-new geloLoaction();
+new geoLocation();
