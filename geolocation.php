@@ -121,9 +121,9 @@ class geoLocation{
    
     public  function geolocation_geoLocationInfo($ip){ 
 
-    	$apiKey = esc_url( get_option('infodbApiKey') );    
+    	$apiKey =  get_option('infodbApiKey') ;    
     	if(!empty($apiKey)){
-        
+
         	    $url = "http://api.ipinfodb.com/v3/ip-city/?key={$apiKey}&format=json&ip={$ip}";
         	    $info = json_decode(file_get_contents($url));
         	    $position = array('longitude'=>$info->{'longitude'}, 'latitude'=>$info->{'latitude'});
