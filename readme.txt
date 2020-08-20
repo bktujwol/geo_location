@@ -2,7 +2,7 @@
 Contributors: ujw0l
 Tags: visitor,tracking, bing map, mapping, IP tracking, IP Address blocking 
 Requires at least: 3.5	+
-Tested up to: 5.2.1
+Tested up to: 5.5
 Stable tag: 2.5.1
 License: GPLv2
 

@@ -1,11 +1,11 @@
 <?php
 /*
  Plugin Name: Geo Location
- Plugin URI: 
+ Plugin URI: https://github.com/ujw0l/geo_location
  Description: Geo Location plugin to map visitor of the site and block user
  Version: 2.5.1
  Author: Ujwol Bastakoti
- Author URI:https://ujwolbastakoti.wordpress.com/
+ Author URI:http://ujw0l.github.io/
  text-domain: geo-location
  License: GPLv2
  */

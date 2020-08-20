@@ -80,6 +80,37 @@ $(document).ready(function(){
             });  
             
 
+                   
+
+/*
+//section to load map
+if( $('#myMap').length >= 1){
+    var latlongs = JSON.parse(geolocation_backend_params.bing_map_visitors);
+ 
+            if(geolocation_backend_params.bing_map_type.length > 0 ){
+
+                var geoLocationMapType = geolocation_backend_params.bing_map_type;
+                } else {
+                var geoLocationMapType = 'road';
+            }
+
+                var map = new Microsoft.Maps.Map('#myMap', {
+                                                            credentials:geolocation_backend_params.bing_map_key,
+                                                            zoom:2,
+                                                            mapTypeId: Microsoft.Maps.MapTypeId.geoLocationMapType,
+                                                            supportedMapTypes: [Microsoft.Maps.MapTypeId.road, Microsoft.Maps.MapTypeId.aerial, Microsoft.Maps.MapTypeId.canvasLight] 
+                                                            });
+                                                                                                                                                               
+     
+
+        for( var i in  latlongs ){
+            if( null !== latlongs[i].lat ||   null !== latlongs[i].long){
+             var pin = new Microsoft.Maps.Pushpin(new Microsoft.Maps.Location(latlongs[i].lat, latlongs[i].long),{ text:'.' });
+            }
+            map.entities.push(pin);
+        }
+  } 
+  */ 
 
 });
 
