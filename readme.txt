@@ -27,8 +27,12 @@ https://ipinfodb.com/register.php
 Bing Map API key from(Developers have option of getting free key)
 https://www.microsoft.com/en-us/maps/choose-your-bing-maps-api
 
-Note:     
+### What's Next
+Checkout out my other projects for WordPress and Javascript
 
+[Plugins](https://profiles.wordpress.org/ujw0l/#content-plugins) - Free plugins
+
+[JS libraries](https://www.npmjs.com/~ujw0l) - Free JS Libraries
 
 == Installation ==
 
